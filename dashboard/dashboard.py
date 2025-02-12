@@ -74,33 +74,11 @@ st.pyplot(fig)
 
 
 #pertanyaan 1
-bike_df['dteday'] = pd.to_datetime(bike_df['dteday'])
-data_2011 = bike_df[bike_df['dteday'].dt.year == 2011]
-
-st.subheader("Sejauh mana hubungan kecepatan angin mempengaruhi jumlah penyewaan sepeda pada tahun 2011?")
-
-#visualisasi untuk melihat pengaruh kecepatan angin
-fig, ax = plt.subplots(figsize=(10,6))
-sns.scatterplot(x="windspeed", y="cnt", data=data_2011, color="royalblue", alpha=0.6, ax=ax)
-ax.set_title("Hubungan Kecepatan Angin dengan Jumlah Penyewaan Sepeda (2011)")
-ax.set_xlabel("Kecepatan Angin", fontsize=12)
-ax.set_ylabel("Jumlah Penyewaan", fontsize=13)
-st.pyplot(fig)
-
-with st.expander("See explanation"):
-    st.write(
-        """ Dari grafik ini, kita bisa melihat apakah ada pola tertentu antara kecepatan angin dan jumlah penyewaan sepeda. 
-            pada visualisasinya, menunjukan bahwa tidak ada kenaikan ataupun penurunan penyewaan sepeda yang kuat jadi, kecepatan angin tidak terlalu berpengaruh terhadap jumlah penyewaan sepeda.
-        """
-    )
-
-
-#pertanyaan 2
 musim = {1: "Musim Dingin", 2: "Musim Semi", 3: "Musim Panas", 4: "Musim Gugur"}
 bike_df['season'] = bike_df['season'].map(musim)
 
 #untuk melihat Korelasi Musim dengan Penyewaan Sepeda
-st.subheader("Berdasarkan pengaruh kecepatan angin, apakah yang menjadi faktor terbesar dalam jumlah penyewaan?")
+st.subheader("Bagaimana Pengaruh Musim terhadap Jumlah penyewaan?")
 bike_df['seasons'] = bike_df['season'].astype('category').cat.codes
 
 corr_season = bike_df[['seasons', 'cnt']].corr()
@@ -116,43 +94,74 @@ with st.expander("See explanation"):
         """
     )
 
+#pertanyaan 2
+# Pastikan kolom datetime sudah dalam format datetime
+bike_df['dteday'] = pd.to_datetime(bike_df['dteday'])
 
-#Addition
+hourly_data = bike_df.groupby("hr")["cnt"].mean().reset_index()
 
-# Menghitung rata-rata penyewa casual dan registered untuk tiap tahun
-casual_2011 = bike_df[bike_df['yr'] == 0]['casual'].mean()
-regist_2011 = bike_df[bike_df['yr'] == 0]['registered'].mean()
-casual_2012 = bike_df[bike_df['yr'] == 1]['casual'].mean()
-regist_2012 = bike_df[bike_df['yr'] == 1]['registered'].mean()
+st.subheader("Pada Jam Berapakah Penyewaan Sepeda Mengalami Peningkatan?")
 
-year = ['2011', '2012']
-casual = [casual_2011, casual_2012]
-registered = [regist_2011, regist_2012]
 
-# visualisas untuk Casual & Registered Users
-st.subheader("Rata-rata Penyewa Casual dan Registered (2011 - 2012)")
-
-fig, ax = plt.subplots(figsize=(8,5))
-
-ax.plot(year, casual, marker='o', linestyle='-', color='blue', label='Casual')
-ax.plot(year, registered, marker='o', linestyle='-', color='skyblue', label='Registered')
-
-ax.set_xlabel("Tahun", fontsize=12)
-ax.set_ylabel("Rata-rata Penyewa", fontsize=12)
-ax.set_title("Tren Rata-rata Penyewa Casual dan Registered (2011 - 2012)", fontsize=14)
-ax.legend()
-ax.grid(True, linestyle='--', alpha=0.7)
-
-ax.set_ylim(0, max(max(casual), max(registered)) * 1.1)
+fig, ax = plt.subplots(figsize=(10,6))
+sns.lineplot(x="hr", y="cnt", data=hourly_data, marker="o", color="royalblue", ax=ax)
+ax.set_title("Tren Penyewaan Sepeda Berdasarkan Jam", fontsize=14)
+ax.set_xlabel("Jam", fontsize=12)
+ax.set_ylabel("Rata-rata Penyewaan Sepeda", fontsize=13)
+ax.grid(True, linestyle="--", alpha=0.5)
 st.pyplot(fig)
 
 with st.expander("See explanation"):
     st.write(
-        """
-            pada visualisasi rata - rata penyewa berdasarkan status (casual or registered ) menunjukkan bahwa pada tahun 2011 dan 2012 kebanyakan adalah pengguna yang sudah terdaftar (registered). Dan rata - rata terendah adalah penyewa yang belum terdaftar (casual).
+        """ Grafik ini menunjukkan pola penyewaan sepeda berdasarkan jam dalam sehari.
+            peningkatan penyewaan terjadi pada jam - jam tertentu. berdasarkan hasil analisa menunjukkan bahwa jumlah penyewaan sepeda tertinggi terjadi pada jam 6 sore yang mana pada jam tersebut merupakan jam pulang kantor sehingga menyebabkan peningkatan penyewa
+
         """
     )
 
+
+#Addition
+bike_df['dteday'] = pd.to_datetime(bike_df['dteday'])
+
+hourly_data = bike_df.groupby("hr")[["cnt", "temp", "hum", "windspeed"]].mean().reset_index()
+
+st.subheader("Analisis Pengaruh Cuaca terhadap Penyewaan Sepeda")
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+sns.scatterplot(ax=axes[0], x=hourly_data["temp"], y=hourly_data["cnt"], alpha=0.5, color="tomato")
+axes[0].set_title("Pengaruh Suhu terhadap Penyewaan Sepeda")
+axes[0].set_xlabel("Suhu")
+axes[0].set_ylabel("Jumlah Penyewaan")
+
+sns.scatterplot(ax=axes[1], x=hourly_data["hum"], y=hourly_data["cnt"], alpha=0.5, color="royalblue")
+axes[1].set_title("Pengaruh Kelembaban terhadap Penyewaan Sepeda")
+axes[1].set_xlabel("Kelembaban")
+axes[1].set_ylabel("Jumlah Penyewaan")
+
+sns.scatterplot(ax=axes[2], x=hourly_data["windspeed"], y=hourly_data["cnt"], alpha=0.5, color="seagreen")
+axes[2].set_title("Pengaruh Kecepatan Angin terhadap Penyewaan Sepeda")
+axes[2].set_xlabel("Kecepatan Angin")
+axes[2].set_ylabel("Jumlah Penyewaan")
+
+plt.tight_layout()
+st.pyplot(fig)
+
+
+st.subheader("Korelasi antara Cuaca dan Penyewaan Sepeda")
+plt.figure(figsize=(8,6))
+corr_matrix = hourly_data[["temp", "hum", "windspeed", "cnt"]].corr()
+sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", fmt=".2f")
+plt.title("Heatmap Korelasi")
+st.pyplot(plt)
+
+with st.expander("See explanation"):
+    st.write(
+        """ Dari visualisasi ini, kita bisa melihat bagaimana faktor cuaca seperti suhu, kelembaban, dan kecepatan angin 
+            mempengaruhi jumlah penyewaan sepeda. Biasanya, suhu yang lebih tinggi meningkatkan penyewaan, sedangkan 
+            kelembaban dan kecepatan angin tidak terlalu berpengaruh signifikan.
+        """
+    )
 
 st.caption('Ayna Dwi Rifdah (Februari 2025)')
 
